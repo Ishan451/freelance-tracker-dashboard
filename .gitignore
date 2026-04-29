@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+
+# Data exports (don't commit private data)
+*.xlsx
+*.xls
+*.csv
+*.pdf
+*.mp4
+*.mp4.part
+*.png
+
+# Streamlit
+.streamlit/secrets.toml
+
+# OS
+.DS_Store
+Thumbs.db
