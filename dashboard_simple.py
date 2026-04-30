@@ -122,27 +122,53 @@ if uploaded_file is not None:
 
         # --- Charts Row 1: Trends ---
 
+        st.markdown(
+            """
+            <style>
+            div[data-testid="stPlotlyChart"] > div {
+                background: white;
+                border-radius: 14px;
+                padding: 18px 14px 8px 14px;
+                box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
         c_chart1, c_chart2 = st.columns(2)
 
         daily_stats = (
             filtered_df.groupby('Day')[['Payable', 'Hours']]
             .sum()
             .reset_index()
-            .sort_values('Day', ascending=False)
+            .sort_values('Day')
         )
         daily_stats['Time_Label'] = daily_stats['Hours'].apply(format_hours)
 
+        light_axis = dict(
+            showgrid=True,
+            gridcolor='rgba(0,0,0,0.10)',
+            griddash='dot',
+            zeroline=False,
+            showline=False,
+            tickfont=dict(color='#1f1f1f', size=12),
+        )
+
         # 1. Daily Hours Chart (line + markers)
         with c_chart1:
-            st.subheader("Daily Hours Worked")
+            st.markdown("### Daily Hours Worked")
             fig_hours = go.Figure()
             fig_hours.add_trace(go.Scatter(
                 x=daily_stats['Day'],
                 y=daily_stats['Hours'],
                 mode='lines+markers',
                 line=dict(color='#A5A0F0', width=2),
-                marker=dict(size=7, color='#A5A0F0',
-                            line=dict(width=1.5, color='#A5A0F0')),
+                marker=dict(
+                    size=8,
+                    color='white',
+                    line=dict(width=2, color='#A5A0F0'),
+                ),
                 customdata=daily_stats[['Time_Label']],
                 hovertemplate='<b>Date:</b> %{x|%b %d, %Y}<br>'
                               '<b>Time:</b> %{customdata[0]}<extra></extra>',
@@ -151,24 +177,24 @@ if uploaded_file is not None:
                 margin=dict(t=10, l=10, r=10, b=10),
                 xaxis_title=None,
                 yaxis_title=None,
-                xaxis=dict(showgrid=True,
-                           gridcolor='rgba(120,120,120,0.25)', griddash='dot'),
-                yaxis=dict(showgrid=True, gridcolor='rgba(120,120,120,0.25)',
-                           griddash='dot', ticksuffix='h'),
-                plot_bgcolor='rgba(0,0,0,0)',
-                hoverlabel=dict(bgcolor='white', font_color='black'),
+                xaxis={**light_axis},
+                yaxis={**light_axis, 'ticksuffix': 'h'},
+                paper_bgcolor='white',
+                plot_bgcolor='white',
+                hoverlabel=dict(bgcolor='white', font_color='black',
+                                bordercolor='rgba(0,0,0,0.15)'),
                 height=360,
             )
             st.plotly_chart(fig_hours, use_container_width=True)
 
         # 2. Daily Earnings Chart (bars)
         with c_chart2:
-            st.subheader("Daily Earnings")
+            st.markdown("### Daily Earnings")
             fig_daily = go.Figure()
             fig_daily.add_trace(go.Bar(
                 x=daily_stats['Day'],
                 y=daily_stats['Payable'],
-                marker_color='#86D2A8',
+                marker=dict(color='#86D2A8', line=dict(width=0)),
                 hovertemplate='<b>Date:</b> %{x|%b %d, %Y}<br>'
                               '<b>totalEarnings:</b> $%{y:,.2f}<extra></extra>',
             ))
@@ -176,13 +202,13 @@ if uploaded_file is not None:
                 margin=dict(t=10, l=10, r=10, b=10),
                 xaxis_title=None,
                 yaxis_title=None,
-                xaxis=dict(showgrid=True,
-                           gridcolor='rgba(120,120,120,0.25)', griddash='dot'),
-                yaxis=dict(showgrid=True, gridcolor='rgba(120,120,120,0.25)',
-                           griddash='dot', tickprefix='$', tickformat=',.2f'),
-                plot_bgcolor='rgba(0,0,0,0)',
-                hoverlabel=dict(bgcolor='white', font_color='black'),
-                bargap=0.25,
+                xaxis={**light_axis},
+                yaxis={**light_axis, 'tickprefix': '$', 'tickformat': ',.2f'},
+                paper_bgcolor='white',
+                plot_bgcolor='white',
+                hoverlabel=dict(bgcolor='white', font_color='black',
+                                bordercolor='rgba(0,0,0,0.15)'),
+                bargap=0.15,
                 height=360,
             )
             st.plotly_chart(fig_daily, use_container_width=True)
