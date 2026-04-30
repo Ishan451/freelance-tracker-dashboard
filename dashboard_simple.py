@@ -124,49 +124,68 @@ if uploaded_file is not None:
 
         c_chart1, c_chart2 = st.columns(2)
 
-        # 1. Daily Earnings Chart
+        daily_stats = (
+            filtered_df.groupby('Day')[['Payable', 'Hours']]
+            .sum()
+            .reset_index()
+            .sort_values('Day', ascending=False)
+        )
+        daily_stats['Time_Label'] = daily_stats['Hours'].apply(format_hours)
+
+        # 1. Daily Hours Chart (line + markers)
         with c_chart1:
-            st.subheader("Daily Earnings Trend")
-            daily_stats = filtered_df.groupby('Day')[['Payable', 'Hours']].sum().reset_index()
-
-            fig_daily = px.bar(
-                daily_stats,
-                x='Day',
-                y='Payable',
-                title="Earnings per Day",
-                labels={'Payable': 'Earnings', 'Day': 'Date'},
-                color_discrete_sequence=['#00CC96'],
-                text_auto='.0f'
-            )
-            fig_daily.update_traces(
-                texttemplate='$%{y:.2f}',
-                textposition='outside',
-                hovertemplate='<b>Date:</b> %{x}<br><b>Earnings:</b> $%{y:.2f}<extra></extra>'
-            )
-            fig_daily.update_layout(yaxis_title=None, xaxis_title=None)
-            st.plotly_chart(fig_daily, use_container_width=True)
-
-        # 2. Daily Hours Chart (Formatted Time)
-        with c_chart2:
             st.subheader("Daily Hours Worked")
-            daily_stats['Time_Label'] = daily_stats['Hours'].apply(format_hours)
-
-            fig_hours = px.bar(
-                daily_stats,
-                x='Day',
-                y='Hours',
-                title="Hours Worked per Day",
-                labels={'Hours': 'Hours', 'Day': 'Date'},
-                color_discrete_sequence=['#636EFA'],
-                custom_data=['Time_Label']
+            fig_hours = go.Figure()
+            fig_hours.add_trace(go.Scatter(
+                x=daily_stats['Day'],
+                y=daily_stats['Hours'],
+                mode='lines+markers',
+                line=dict(color='#A5A0F0', width=2),
+                marker=dict(size=7, color='#A5A0F0',
+                            line=dict(width=1.5, color='#A5A0F0')),
+                customdata=daily_stats[['Time_Label']],
+                hovertemplate='<b>Date:</b> %{x|%b %d, %Y}<br>'
+                              '<b>Time:</b> %{customdata[0]}<extra></extra>',
+            ))
+            fig_hours.update_layout(
+                margin=dict(t=10, l=10, r=10, b=10),
+                xaxis_title=None,
+                yaxis_title=None,
+                xaxis=dict(autorange='reversed', showgrid=True,
+                           gridcolor='rgba(120,120,120,0.25)', griddash='dot'),
+                yaxis=dict(showgrid=True, gridcolor='rgba(120,120,120,0.25)',
+                           griddash='dot', ticksuffix='h'),
+                plot_bgcolor='rgba(0,0,0,0)',
+                hoverlabel=dict(bgcolor='white', font_color='black'),
+                height=360,
             )
-            fig_hours.update_traces(
-                text=daily_stats['Time_Label'],
-                textposition='outside',
-                hovertemplate='<b>Date:</b> %{x}<br><b>Time:</b> %{customdata[0]}<extra></extra>'
-            )
-            fig_hours.update_layout(yaxis_title=None, xaxis_title=None)
             st.plotly_chart(fig_hours, use_container_width=True)
+
+        # 2. Daily Earnings Chart (bars)
+        with c_chart2:
+            st.subheader("Daily Earnings")
+            fig_daily = go.Figure()
+            fig_daily.add_trace(go.Bar(
+                x=daily_stats['Day'],
+                y=daily_stats['Payable'],
+                marker_color='#86D2A8',
+                hovertemplate='<b>Date:</b> %{x|%b %d, %Y}<br>'
+                              '<b>totalEarnings:</b> $%{y:,.2f}<extra></extra>',
+            ))
+            fig_daily.update_layout(
+                margin=dict(t=10, l=10, r=10, b=10),
+                xaxis_title=None,
+                yaxis_title=None,
+                xaxis=dict(autorange='reversed', showgrid=True,
+                           gridcolor='rgba(120,120,120,0.25)', griddash='dot'),
+                yaxis=dict(showgrid=True, gridcolor='rgba(120,120,120,0.25)',
+                           griddash='dot', tickprefix='$', tickformat=',.2f'),
+                plot_bgcolor='rgba(0,0,0,0)',
+                hoverlabel=dict(bgcolor='white', font_color='black'),
+                bargap=0.25,
+                height=360,
+            )
+            st.plotly_chart(fig_daily, use_container_width=True)
 
         # --- Charts Row 2: Distribution ---
 
