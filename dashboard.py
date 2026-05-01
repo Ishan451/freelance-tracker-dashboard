@@ -390,17 +390,43 @@ st.sidebar.header("Filters")
 
 min_date = df['Work Date'].min().date()
 max_date = df['Work Date'].max().date()
+import datetime as _dt
+_anchor = min(_dt.date.today(), max_date)
+_lo = pd.Timestamp("2025-01-01").date()
+
+if 'main_date_range' not in st.session_state:
+    st.session_state.main_date_range = (min_date, max_date)
+
+def _apply_range(s, e):
+    s = max(s, _lo)
+    st.session_state.main_date_range = (s, e)
+    st.rerun()
+
+st.sidebar.markdown("**Quick range**")
+qb = st.sidebar.columns(5)
+if qb[0].button("7d", use_container_width=True, key="qb_7d"):
+    _apply_range(_anchor - _dt.timedelta(days=6), _anchor)
+if qb[1].button("30d", use_container_width=True, key="qb_30d"):
+    _apply_range(_anchor - _dt.timedelta(days=29), _anchor)
+if qb[2].button("90d", use_container_width=True, key="qb_90d"):
+    _apply_range(_anchor - _dt.timedelta(days=89), _anchor)
+if qb[3].button("MTD", use_container_width=True, key="qb_mtd"):
+    _apply_range(_anchor.replace(day=1), _anchor)
+if qb[4].button("YTD", use_container_width=True, key="qb_ytd"):
+    _apply_range(_anchor.replace(month=1, day=1), _anchor)
+
 date_sel = st.sidebar.date_input(
     "Date Range",
-    value=[min_date, max_date],
-    min_value=pd.Timestamp("2025-01-01").date(),
+    key='main_date_range',
+    min_value=_lo,
     max_value=pd.Timestamp("2100-12-31").date(),
 )
 if isinstance(date_sel, (list, tuple)) and len(date_sel) == 2:
     start_date, end_date = date_sel
+elif isinstance(date_sel, (list, tuple)) and len(date_sel) == 1:
+    start_date = end_date = date_sel[0]
 else:
-    only = date_sel[0] if isinstance(date_sel, (list, tuple)) else date_sel
-    start_date = end_date = only
+    start_date = end_date = date_sel
 
 if start_date > end_date:
     st.sidebar.error("Start date is after end date.")

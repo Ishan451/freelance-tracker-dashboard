@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import re
+import datetime as _dt
 
 # --- Configuration ---
 st.set_page_config(page_title="Earnings & Time Dashboard", layout="wide")
@@ -85,12 +86,42 @@ if uploaded_file is not None:
         # Date Range Filter
         min_date = df['Work Date'].min().date()
         max_date = df['Work Date'].max().date()
-        start_date, end_date = st.sidebar.date_input(
+        anchor = min(_dt.date.today(), max_date)
+
+        if 'simple_date_range' not in st.session_state:
+            st.session_state.simple_date_range = (min_date, max_date)
+
+        def _apply_simple_range(s, e):
+            s = max(s, min_date)
+            e = min(e, max_date)
+            st.session_state.simple_date_range = (s, e)
+            st.rerun()
+
+        st.sidebar.markdown("**Quick range**")
+        qb = st.sidebar.columns(5)
+        if qb[0].button("7d", use_container_width=True, key="s_qb_7d"):
+            _apply_simple_range(anchor - _dt.timedelta(days=6), anchor)
+        if qb[1].button("30d", use_container_width=True, key="s_qb_30d"):
+            _apply_simple_range(anchor - _dt.timedelta(days=29), anchor)
+        if qb[2].button("90d", use_container_width=True, key="s_qb_90d"):
+            _apply_simple_range(anchor - _dt.timedelta(days=89), anchor)
+        if qb[3].button("MTD", use_container_width=True, key="s_qb_mtd"):
+            _apply_simple_range(anchor.replace(day=1), anchor)
+        if qb[4].button("YTD", use_container_width=True, key="s_qb_ytd"):
+            _apply_simple_range(anchor.replace(month=1, day=1), anchor)
+
+        date_sel = st.sidebar.date_input(
             "Select Date Range",
-            value=[min_date, max_date],
+            key='simple_date_range',
             min_value=min_date,
-            max_value=max_date
+            max_value=max_date,
         )
+        if isinstance(date_sel, (list, tuple)) and len(date_sel) == 2:
+            start_date, end_date = date_sel
+        elif isinstance(date_sel, (list, tuple)) and len(date_sel) == 1:
+            start_date = end_date = date_sel[0]
+        else:
+            start_date = end_date = date_sel
 
         # Project Filter
         projects = ['All'] + sorted(df['Project Name'].dropna().unique().tolist())
