@@ -427,18 +427,6 @@ if preset and preset != st.session_state.main_last_preset:
     st.session_state.main_last_preset = preset
     st.rerun()
 
-def _reset_main():
-    st.session_state.main_date_range = (min_date, max_date)
-    st.session_state.main_last_preset = None
-    st.session_state.main_preset = None
-
-st.sidebar.button(
-    "Reset to all time",
-    use_container_width=True,
-    key="reset_main",
-    on_click=_reset_main,
-)
-
 date_sel = st.sidebar.date_input(
     "Date Range",
     key='main_date_range',
