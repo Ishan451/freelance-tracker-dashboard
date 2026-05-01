@@ -88,27 +88,45 @@ if uploaded_file is not None:
         max_date = df['Work Date'].max().date()
         anchor = min(_dt.date.today(), max_date)
 
+        SIMPLE_PRESETS = ["All time", "Last 7d", "Last 30d", "Last 90d", "This month", "Year to date"]
+
         if 'simple_date_range' not in st.session_state:
             st.session_state.simple_date_range = (min_date, max_date)
+        if 'simple_last_preset' not in st.session_state:
+            st.session_state.simple_last_preset = None
 
-        def _apply_simple_range(s, e):
+        def _simple_range_for(name):
+            if name == "All time":     return (min_date, max_date)
+            if name == "Last 7d":      return (anchor - _dt.timedelta(days=6), anchor)
+            if name == "Last 30d":     return (anchor - _dt.timedelta(days=29), anchor)
+            if name == "Last 90d":     return (anchor - _dt.timedelta(days=89), anchor)
+            if name == "This month":   return (anchor.replace(day=1), anchor)
+            if name == "Year to date": return (anchor.replace(month=1, day=1), anchor)
+            return (min_date, max_date)
+
+        st.sidebar.markdown("**Quick range**")
+        s_preset = st.sidebar.segmented_control(
+            "Quick range",
+            options=SIMPLE_PRESETS,
+            selection_mode="single",
+            default=None,
+            key='simple_preset',
+            label_visibility="collapsed",
+        )
+
+        if s_preset and s_preset != st.session_state.simple_last_preset:
+            s, e = _simple_range_for(s_preset)
             s = max(s, min_date)
             e = min(e, max_date)
             st.session_state.simple_date_range = (s, e)
+            st.session_state.simple_last_preset = s_preset
             st.rerun()
 
-        st.sidebar.markdown("**Quick range**")
-        qb = st.sidebar.columns(5)
-        if qb[0].button("7d", use_container_width=True, key="s_qb_7d"):
-            _apply_simple_range(anchor - _dt.timedelta(days=6), anchor)
-        if qb[1].button("30d", use_container_width=True, key="s_qb_30d"):
-            _apply_simple_range(anchor - _dt.timedelta(days=29), anchor)
-        if qb[2].button("90d", use_container_width=True, key="s_qb_90d"):
-            _apply_simple_range(anchor - _dt.timedelta(days=89), anchor)
-        if qb[3].button("MTD", use_container_width=True, key="s_qb_mtd"):
-            _apply_simple_range(anchor.replace(day=1), anchor)
-        if qb[4].button("YTD", use_container_width=True, key="s_qb_ytd"):
-            _apply_simple_range(anchor.replace(month=1, day=1), anchor)
+        if st.sidebar.button("Reset to all time", use_container_width=True, key="reset_simple"):
+            st.session_state.simple_date_range = (min_date, max_date)
+            st.session_state.simple_last_preset = None
+            st.session_state.simple_preset = None
+            st.rerun()
 
         date_sel = st.sidebar.date_input(
             "Select Date Range",

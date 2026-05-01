@@ -394,26 +394,44 @@ import datetime as _dt
 _anchor = min(_dt.date.today(), max_date)
 _lo = pd.Timestamp("2025-01-01").date()
 
+PRESETS = ["All time", "Last 7d", "Last 30d", "Last 90d", "This month", "Year to date"]
+
 if 'main_date_range' not in st.session_state:
     st.session_state.main_date_range = (min_date, max_date)
+if 'main_last_preset' not in st.session_state:
+    st.session_state.main_last_preset = None
 
-def _apply_range(s, e):
-    s = max(s, _lo)
-    st.session_state.main_date_range = (s, e)
-    st.rerun()
+def _range_for_preset(name):
+    if name == "All time":     return (min_date, max_date)
+    if name == "Last 7d":      return (_anchor - _dt.timedelta(days=6), _anchor)
+    if name == "Last 30d":     return (_anchor - _dt.timedelta(days=29), _anchor)
+    if name == "Last 90d":     return (_anchor - _dt.timedelta(days=89), _anchor)
+    if name == "This month":   return (_anchor.replace(day=1), _anchor)
+    if name == "Year to date": return (_anchor.replace(month=1, day=1), _anchor)
+    return (min_date, max_date)
 
 st.sidebar.markdown("**Quick range**")
-qb = st.sidebar.columns(5)
-if qb[0].button("7d", use_container_width=True, key="qb_7d"):
-    _apply_range(_anchor - _dt.timedelta(days=6), _anchor)
-if qb[1].button("30d", use_container_width=True, key="qb_30d"):
-    _apply_range(_anchor - _dt.timedelta(days=29), _anchor)
-if qb[2].button("90d", use_container_width=True, key="qb_90d"):
-    _apply_range(_anchor - _dt.timedelta(days=89), _anchor)
-if qb[3].button("MTD", use_container_width=True, key="qb_mtd"):
-    _apply_range(_anchor.replace(day=1), _anchor)
-if qb[4].button("YTD", use_container_width=True, key="qb_ytd"):
-    _apply_range(_anchor.replace(month=1, day=1), _anchor)
+preset = st.sidebar.segmented_control(
+    "Quick range",
+    options=PRESETS,
+    selection_mode="single",
+    default=None,
+    key='main_preset',
+    label_visibility="collapsed",
+)
+
+if preset and preset != st.session_state.main_last_preset:
+    s, e = _range_for_preset(preset)
+    s = max(s, _lo)
+    st.session_state.main_date_range = (s, e)
+    st.session_state.main_last_preset = preset
+    st.rerun()
+
+if st.sidebar.button("Reset to all time", use_container_width=True, key="reset_main"):
+    st.session_state.main_date_range = (min_date, max_date)
+    st.session_state.main_last_preset = None
+    st.session_state.main_preset = None
+    st.rerun()
 
 date_sel = st.sidebar.date_input(
     "Date Range",
