@@ -122,11 +122,17 @@ if uploaded_file is not None:
             st.session_state.simple_last_preset = s_preset
             st.rerun()
 
-        if st.sidebar.button("Reset to all time", use_container_width=True, key="reset_simple"):
+        def _reset_simple():
             st.session_state.simple_date_range = (min_date, max_date)
             st.session_state.simple_last_preset = None
             st.session_state.simple_preset = None
-            st.rerun()
+
+        st.sidebar.button(
+            "Reset to all time",
+            use_container_width=True,
+            key="reset_simple",
+            on_click=_reset_simple,
+        )
 
         date_sel = st.sidebar.date_input(
             "Select Date Range",
